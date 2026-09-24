@@ -6,6 +6,7 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem\Driver\File as FileDriver;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -14,7 +15,7 @@ use Psr\Log\LoggerInterface;
  */
 class CropResize extends Action
 {
-    const ADMIN_RESOURCE = 'Meetanshi_AiProductStudio::studio';
+    const ADMIN_RESOURCE = 'Meetanshi_AiProductStudio::config';
 
     /**
      * Predefined crop dimensions
@@ -31,18 +32,21 @@ class CropResize extends Action
     protected $directoryList;
     protected $fileDriver;
     protected $logger;
+    protected $productRepository;
 
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
         DirectoryList $directoryList,
         FileDriver $fileDriver,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ProductRepositoryInterface $productRepository
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->directoryList = $directoryList;
         $this->fileDriver = $fileDriver;
         $this->logger = $logger;
+        $this->productRepository = $productRepository;
         parent::__construct($context);
     }
 
@@ -54,10 +58,23 @@ class CropResize extends Action
             $imagePath = $this->getRequest()->getParam('image_path');
             $selectedSizes = $this->getRequest()->getParam('sizes');
             $quality = (int)($this->getRequest()->getParam('quality') ?: 85);
+            $productId = $this->getRequest()->getParam('product_id');
 
             if (!$imagePath) {
                 return $result->setData(['error' => 'No image selected.']);
             }
+
+            if (!$productId) {
+                return $result->setData(['error' => 'No product specified.']);
+            }
+
+            try {
+                $product = $this->productRepository->getById($productId);
+            } catch (\Exception $e) {
+                return $result->setData(['error' => 'Product not found: ' . $productId]);
+            }
+
+            $skuFolder = $this->sanitizeFolderName($product->getSku());
 
             if (empty($selectedSizes)) {
                 $selectedSizes = array_keys(self::DIMENSIONS);
@@ -84,11 +101,8 @@ class CropResize extends Action
                 return $result->setData(['error' => 'Unsupported format. Use .jpg, .jpeg, or .png']);
             }
 
-            // Create output directory
-            $outputDir = $mediaDir . '/ai_studio/cropped';
-            if (!$this->fileDriver->isDirectory($outputDir)) {
-                $this->fileDriver->createDirectory($outputDir, 0777);
-            }
+            // SKU-scoped output root: media/wysiwyg/<SKU>/
+            $outputDir = $mediaDir . '/wysiwyg/' . $skuFolder;
 
             // Load source image
             $sourceImage = $this->loadImage($fullPath, $extension);
@@ -119,15 +133,20 @@ class CropResize extends Action
                     $targetHeight
                 );
 
-                // Generate output filename: originalname-WIDTHxHEIGHT.jpg
-                $outputFilename = $originalName . '-' . $sizeKey . '.jpg';
-                $outputPath = $outputDir . '/' . $outputFilename;
+                // Per-size subfolder keeps the original filename identical across all 5 sizes
+                $sizeDir = $outputDir . '/' . $sizeKey;
+                if (!$this->fileDriver->isDirectory($sizeDir)) {
+                    $this->fileDriver->createDirectory($sizeDir, 0777);
+                }
+
+                $outputFilename = $originalName . '.jpg';
+                $outputPath = $sizeDir . '/' . $outputFilename;
 
                 // Save as JPEG (web-optimized)
                 imagejpeg($croppedImage, $outputPath, $quality);
                 imagedestroy($croppedImage);
 
-                $relativePath = 'ai_studio/cropped/' . $outputFilename;
+                $relativePath = 'wysiwyg/' . $skuFolder . '/' . $sizeKey . '/' . $outputFilename;
                 $generatedImages[] = [
                     'size' => $sizeKey,
                     'width' => $targetWidth,
@@ -148,7 +167,9 @@ class CropResize extends Action
                     'name' => $originalName,
                     'width' => $srcWidth,
                     'height' => $srcHeight,
+                    'path' => $imagePath,
                 ],
+                'sku_folder' => $skuFolder,
             ]);
         } catch (\Exception $e) {
             $this->logger->error('AiProductStudio CropResize Error: ' . $e->getMessage());
@@ -208,6 +229,17 @@ class CropResize extends Action
             default:
                 return null;
         }
+    }
+
+    /**
+     * Sanitize the SKU into a filesystem-safe folder name
+     */
+    protected function sanitizeFolderName($sku)
+    {
+        $name = trim((string)$sku);
+        $name = preg_replace('/[^A-Za-z0-9_-]+/', '-', $name);
+        $name = trim($name, '-');
+        return $name !== '' ? $name : 'default';
     }
 
     /**

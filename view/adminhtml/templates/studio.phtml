@@ -10,6 +10,7 @@
             <button class="tab-link active" onclick="openTab(event, 'Generate')"><?= /* @noEscape */ __('Generate New') ?></button>
             <button class="tab-link" onclick="openTab(event, 'Edit')"><?= /* @noEscape */ __('Edit Existing') ?></button>
             <button class="tab-link" onclick="openTab(event, 'CropResize')"><?= /* @noEscape */ __('Crop & Resize') ?></button>
+            <button class="tab-link" onclick="openTab(event, 'BulkCompress')"><?= /* @noEscape */ __('Bulk Compress') ?></button>
         </div>
     </div>
 
@@ -278,6 +279,32 @@
             </div>
         </div>
     </div>
+
+    <div id="BulkCompress" class="tab-content">
+        <div class="studio-layout">
+            <div class="studio-controls">
+                <h3><?= /* @noEscape */ __('Bulk Compress Gallery') ?></h3>
+                <p class="description"><?= /* @noEscape */ __('Compress every image in this product\'s gallery to 300KB or less. Dimensions and aspect ratio are kept, nothing is cropped. Every original is automatically backed up before it is overwritten.') ?></p>
+
+                <div class="field-group">
+                    <p style="font-size:1.1rem;color:#666;background:#f0f7ff;border:1px solid #b3d4fc;border-radius:4px;padding:10px;">
+                        <?= /* @noEscape */ __('Backups are saved to') ?> <code>media/ai_studio/backup/catalog/product/...</code>
+                    </p>
+                </div>
+
+                <button type="button" class="action-primary" style="width:100%;" onclick="runCompressBulk()">
+                    <?= /* @noEscape */ __('Compress All Gallery Images') ?>
+                </button>
+            </div>
+
+            <div class="studio-preview" id="compress-results">
+                <div class="placeholder-state">
+                    <p><?= /* @noEscape */ __('Compression results will appear here.') ?></p>
+                    <p style="font-size:1.1rem;color:#999;margin-top:10px;">Click "Compress All Gallery Images" to start</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -501,6 +528,27 @@
     .crop-modal-close:hover { color: #eb5202; }
     .crop-modal-body { padding: 20px; overflow: auto; max-height: 80vh; text-align: center; }
     .crop-modal-body img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+
+    /* Bulk Compress Tab */
+    .compress-results-table { width: 100%; border-collapse: collapse; background: #fff; }
+    .compress-results-table th, .compress-results-table td {
+        text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 1.2rem;
+    }
+    .compress-results-table th { color: #666; font-weight: 700; background: #fafafa; }
+    .compress-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; background: #eee; }
+    .status-badge {
+        display: inline-block; padding: 3px 10px; border-radius: 12px;
+        font-size: 1.05rem; font-weight: 700;
+    }
+    .status-badge.ok { background: #d4edda; color: #155724; }
+    .status-badge.flagged { background: #fff3cd; color: #856404; }
+    .status-badge.error { background: #f8d7da; color: #721c24; }
+    .compress-row.flagged { background: #fffdf5; }
+    .compress-manual-row { display: none; }
+    .compress-manual-row.open { display: table-row; }
+    .compress-manual-cell { padding: 10px 12px !important; background: #fcfcfc; }
+    .compress-manual-controls { display: flex; align-items: center; gap: 10px; }
+    .compress-manual-controls input[type="range"] { flex: 1; max-width: 260px; }
 </style>
 
 <script>
@@ -883,7 +931,8 @@
                     form_key: typeof FORM_KEY !== 'undefined' ? FORM_KEY : '',
                     image_path: imagePath,
                     sizes: selectedSizes.join(','),
-                    quality: quality
+                    quality: quality,
+                    product_id: currentProductId
                 },
                 success: function(response) {
                     if (response.success && response.images) {
@@ -904,6 +953,10 @@
             html += '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">';
             html += '<h3 style="margin:0;color:#333;">' + response.images.length + ' images generated</h3>';
             html += '<span style="color:#666;font-size:1.2rem;">Source: ' + response.original.width + '×' + response.original.height + '</span>';
+            html += '</div>';
+            html += '<div style="margin-bottom:16px;padding:12px;background:#fff8f0;border:1px solid #f3d9b1;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">';
+            html += '<span style="font-size:1.2rem;color:#664d03;">Saved to <code>media/' + response.sku_folder + '</code>. Review the results below, then remove the original from the gallery once you\'re happy with them.</span>';
+            html += '<button type="button" class="action-secondary" id="btn-delete-original" onclick="runDeleteOriginal(\'' + response.original.path + '\', this)" style="flex-shrink:0;margin-left:12px;">Delete Original from Gallery</button>';
             html += '</div>';
             html += '<div class="crop-results-grid">';
 
@@ -975,6 +1028,190 @@
                 },
                 error: function() {
                     $btn.prop('disabled', false).text('Save to Gallery');
+                }
+            });
+        };
+
+        window.runDeleteOriginal = function(imagePath, btn) {
+            var $btn = $(btn);
+
+            if (!$btn.hasClass('confirm-state')) {
+                $btn.addClass('confirm-state action-confirm');
+                $btn.text('Confirm Delete?');
+                setTimeout(function() {
+                    if ($btn.hasClass('confirm-state')) {
+                        $btn.removeClass('confirm-state action-confirm');
+                        $btn.text('Delete Original from Gallery');
+                    }
+                }, 3000);
+                return;
+            }
+
+            $btn.prop('disabled', true).text('Deleting...');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/deleteOriginal"); ?>',
+                type: 'POST',
+                data: {
+                    form_key: typeof FORM_KEY !== 'undefined' ? FORM_KEY : '',
+                    image_path: imagePath,
+                    product_id: currentProductId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $btn.removeClass('confirm-state action-confirm').text('Deleted ✓').prop('disabled', true);
+                        var msg = 'Original removed from the gallery.';
+                        if (response.no_replacement_available) {
+                            msg += ' Warning: no other gallery image was available, so the base image is now empty — add one before saving the product.';
+                        } else if (response.reassigned_to) {
+                            msg += ' Base image role reassigned automatically.';
+                        }
+                        showToast(response.no_replacement_available ? 'error' : 'success', 'Done', msg);
+                    } else {
+                        $btn.prop('disabled', false).removeClass('confirm-state action-confirm').text('Delete Original from Gallery');
+                        alert({content: 'Error: ' + response.message});
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).removeClass('confirm-state action-confirm').text('Delete Original from Gallery');
+                    alert({content: 'Server error while deleting the original.'});
+                }
+            });
+        };
+
+        // --- 9. BULK COMPRESS FUNCTIONS ---
+        window.runCompressBulk = function() {
+            var resultDiv = $('#compress-results');
+            resultDiv.html('<div class="loading-state"><div class="loader"></div><p>Compressing gallery images... please wait.</p></div>');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/compressBulk"); ?>',
+                type: 'POST',
+                data: {
+                    form_key: typeof FORM_KEY !== 'undefined' ? FORM_KEY : '',
+                    product_id: currentProductId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        renderCompressResults(response.images);
+                    } else {
+                        resultDiv.html('<p style="color:red;">Error: ' + (response.error || 'Unknown error') + '</p>');
+                    }
+                },
+                error: function() {
+                    resultDiv.html('<p style="color:red;">Server error during bulk compression.</p>');
+                }
+            });
+        };
+
+        function bytesLabel(bytes) {
+            if (!bytes && bytes !== 0) return '—';
+            if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+            return Math.round(bytes / 1024) + ' KB';
+        }
+
+        window.renderCompressResults = function(images) {
+            var mediaUrl = '<?= /* @noEscape */ $block->getMediaUrl(); ?>';
+            var okCount = images.filter(function(i) { return i.success && !i.flagged; }).length;
+            var flaggedCount = images.filter(function(i) { return i.success && i.flagged; }).length;
+            var errorCount = images.filter(function(i) { return !i.success; }).length;
+
+            var html = '<div style="width:100%;">';
+            html += '<div style="margin-bottom:16px;display:flex;gap:16px;align-items:center;">';
+            html += '<h3 style="margin:0;color:#333;">' + images.length + ' image(s) processed</h3>';
+            html += '<span class="status-badge ok">' + okCount + ' under target</span>';
+            html += '<span class="status-badge flagged">' + flaggedCount + ' flagged</span>';
+            if (errorCount > 0) { html += '<span class="status-badge error">' + errorCount + ' error</span>'; }
+            html += '</div>';
+
+            html += '<table class="compress-results-table"><thead><tr>';
+            html += '<th></th><th>File</th><th>Original</th><th>Final</th><th>Quality</th><th>Status</th><th></th>';
+            html += '</tr></thead><tbody>';
+
+            images.forEach(function(img, idx) {
+                var rowId = 'compress-row-' + idx;
+                var manualRowId = 'compress-manual-' + idx;
+
+                if (!img.success) {
+                    html += '<tr class="compress-row"><td></td><td>' + (img.filename || img.path) + '</td>';
+                    html += '<td colspan="4" style="color:#721c24;">' + img.error + '</td><td></td></tr>';
+                    return;
+                }
+
+                var statusHtml = img.flagged
+                    ? '<span class="status-badge flagged">⚠ Over target</span>'
+                    : (img.skipped ? '<span class="status-badge ok">Already OK</span>' : '<span class="status-badge ok">Compressed</span>');
+
+                html += '<tr class="compress-row' + (img.flagged ? ' flagged' : '') + '" id="' + rowId + '">';
+                html += '<td><img class="compress-thumb" src="' + mediaUrl + 'catalog/product' + img.path + '?t=' + Date.now() + '" alt=""></td>';
+                html += '<td>' + img.filename + '<br><span style="color:#999;font-size:1.05rem;">' + img.width + '×' + img.height + '</span></td>';
+                html += '<td>' + bytesLabel(img.original_size) + '</td>';
+                html += '<td>' + bytesLabel(img.final_size) + '</td>';
+                html += '<td>' + (img.quality !== null && img.quality !== undefined ? img.quality + '%' : '—') + '</td>';
+                html += '<td>' + statusHtml + '</td>';
+                html += '<td>' + (img.flagged ? '<button type="button" class="action-secondary" onclick="toggleManualCompress(\'' + manualRowId + '\')">Adjust</button>' : '') + '</td>';
+                html += '</tr>';
+
+                if (img.flagged) {
+                    html += '<tr class="compress-manual-row" id="' + manualRowId + '">';
+                    html += '<td colspan="7" class="compress-manual-cell">';
+                    html += '<div class="compress-manual-controls">';
+                    html += '<label style="font-weight:600;">Quality:</label>';
+                    html += '<input type="range" min="10" max="95" value="' + (img.quality || 60) + '" id="quality-' + idx + '">';
+                    html += '<span id="quality-label-' + idx + '">' + (img.quality || 60) + '%</span>';
+                    html += '<button type="button" class="action-primary" onclick="recompressImage(\'' + img.path + '\', ' + idx + ', \'' + rowId + '\')">Re-compress</button>';
+                    html += '</div>';
+                    html += '</td></tr>';
+                }
+            });
+
+            html += '</tbody></table></div>';
+            $('#compress-results').html(html);
+
+            images.forEach(function(img, idx) {
+                $('#quality-' + idx).on('input', function() {
+                    $('#quality-label-' + idx).text($(this).val() + '%');
+                });
+            });
+        };
+
+        window.toggleManualCompress = function(manualRowId) {
+            $('#' + manualRowId).toggleClass('open');
+        };
+
+        window.recompressImage = function(imagePath, idx, rowId) {
+            var quality = $('#quality-' + idx).val();
+            var mediaUrl = '<?= /* @noEscape */ $block->getMediaUrl(); ?>';
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/compress"); ?>',
+                type: 'POST',
+                data: {
+                    form_key: typeof FORM_KEY !== 'undefined' ? FORM_KEY : '',
+                    image_path: imagePath,
+                    quality: quality
+                },
+                success: function(response) {
+                    if (response.error) {
+                        alert({content: 'Error: ' + response.error});
+                        return;
+                    }
+                    var $row = $('#' + rowId);
+                    $row.find('.compress-thumb').attr('src', mediaUrl + 'catalog/product' + response.path + '?t=' + Date.now());
+                    $row.find('td').eq(3).text(bytesLabel(response.final_size));
+                    $row.find('td').eq(4).text(response.quality + '%');
+                    if (!response.flagged) {
+                        $row.removeClass('flagged');
+                        $row.find('td').eq(5).html('<span class="status-badge ok">Compressed</span>');
+                        $row.find('td').eq(6).html('');
+                        $('#' + rowId.replace('compress-row-', 'compress-manual-')).remove();
+                    } else {
+                        $row.find('td').eq(5).html('<span class="status-badge flagged">⚠ Over target</span>');
+                        showToast('error', 'Still over target', 'Lower the quality further, or accept this size — quality floor is 10% to protect visual quality.');
+                    }
+                },
+                error: function() {
+                    alert({content: 'Server error while compressing.'});
                 }
             });
         };
