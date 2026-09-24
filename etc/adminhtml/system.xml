@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="meetanshi" translate="label" sortOrder="100">
+            <label></label>
+        </tab>
+        <section id="ai_product_studio" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>AI Product Studio</label>
+            <tab>meetanshi</tab>
+            <resource>Meetanshi_AiProductStudio::configuration</resource>
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General Configuration</label>
+                <field id="api_key" translate="label" type="obscure" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Gemini API Key</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="model" translate="label" type="select" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Gemini Model</label>
+                    <source_model>Meetanshi\AiProductStudio\Model\Config\Source\GeminiModels</source_model>
+                </field>
+                <field id="store_owner_instructions" translate="label" type="textarea" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Store Owner Instructions</label>
+                    <comment>Global instructions for the AI (e.g., "Always use a white background", "Make images high contrast").</comment>
+                </field>
+                <field id="default_resolution" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Output Resolution</label>
+                    <source_model>Meetanshi\AiProductStudio\Model\Config\Source\Resolutions</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

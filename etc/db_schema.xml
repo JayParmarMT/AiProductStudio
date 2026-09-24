@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/db_schema.xsd">
+    <table name="meetanshi_ai_product_studio_log" resource="default" engine="innodb" comment="AI Product Studio Request Logs">
+        <column xsi:type="int" name="log_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Log ID"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Creation Time"/>
+        <column xsi:type="varchar" name="model" nullable="true" length="255" comment="AI Model Used"/>
+        <column xsi:type="varchar" name="request_type" nullable="true" length="50" comment="Request Type (generate, edit, etc)"/>
+        <column xsi:type="int" name="prompt_tokens" padding="10" unsigned="true" nullable="true" comment="Prompt Tokens"/>
+        <column xsi:type="int" name="completion_tokens" padding="10" unsigned="true" nullable="true" comment="Completion Tokens"/>
+        <column xsi:type="int" name="total_tokens" padding="10" unsigned="true" nullable="true" comment="Total Tokens"/>
+        <column xsi:type="varchar" name="status" nullable="true" length="20" comment="Status (success, error)"/>
+        <column xsi:type="text" name="error_message" nullable="true" comment="Error Message"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="log_id"/>
+        </constraint>
+    </table>
+</schema>

@@ -1,0 +1,983 @@
+<?php
+/**
+ * AI Product Studio - Main PHTML Template
+ */
+?>
+<div class="ai-product-studio-container">
+    <div class="ai-studio-header">
+        <h2><?= /* @noEscape */ __('AI Product Studio') ?></h2>
+        <div class="ai-studio-tabs">
+            <button class="tab-link active" onclick="openTab(event, 'Generate')"><?= /* @noEscape */ __('Generate New') ?></button>
+            <button class="tab-link" onclick="openTab(event, 'Edit')"><?= /* @noEscape */ __('Edit Existing') ?></button>
+            <button class="tab-link" onclick="openTab(event, 'CropResize')"><?= /* @noEscape */ __('Crop & Resize') ?></button>
+        </div>
+    </div>
+
+    <div id="Generate" class="tab-content" style="display: block;">
+        <div class="studio-layout">
+            <div class="studio-controls">
+                <h3><?= /* @noEscape */ __('Generate New') ?></h3>
+                <p class="description"><?= /* @noEscape */ __('Create high-quality product shots by combining specific compositions and lighting styles.') ?></p>
+
+                <form id="ai-generate-form">
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Composition & Angle') ?></label>
+                        <select name="composition" class="admin__control-select">
+                            <option value="front_view_symmetrical"><?= /* @noEscape */ __('Front View (Symmetrical)') ?></option>
+                            <option value="flat_lay_knolling"><?= /* @noEscape */ __('Overhead Flat Lay (Knolling)') ?></option>
+                            <option value="isometric_3d"><?= /* @noEscape */ __('Isometric 45° (3D Render Style)') ?></option>
+                            <option value="low_angle_hero"><?= /* @noEscape */ __('Low Angle (Hero Shot)') ?></option>
+                            <option value="macro_closeup"><?= /* @noEscape */ __('Macro Close-Up (Detail Focus)') ?></option>
+                            <option value="cinematic_dof"><?= /* @noEscape */ __('Cinematic (Depth of Field)') ?></option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Lighting & Mood') ?></label>
+                        <select name="lighting" class="admin__control-select">
+                            <option value="soft_studio_diffused"><?= /* @noEscape */ __('Soft Studio (Diffused/Clean)') ?></option>
+                            <option value="hard_sunlight_shadows"><?= /* @noEscape */ __('Natural Sunlight (Hard Shadows)') ?></option>
+                            <option value="golden_hour_warm"><?= /* @noEscape */ __('Golden Hour (Warm/Sunset)') ?></option>
+                            <option value="neon_cyberpunk"><?= /* @noEscape */ __('Neon / Cyberpunk (RGB Glow)') ?></option>
+                            <option value="dramatic_rim_light"><?= /* @noEscape */ __('Dark & Moody (Rim Lighting)') ?></option>
+                            <option value="luxury_high_key"><?= /* @noEscape */ __('High Key (Bright & Airy)') ?></option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Surroundings / Surface') ?></label>
+                        <select name="surroundings" class="admin__control-select">
+                            <option value="solid_color_studio"><?= /* @noEscape */ __('Solid Color Studio (Seamless)') ?></option>
+                            <option value="marble_luxury"><?= /* @noEscape */ __('Luxury Marble Surface') ?></option>
+                            <option value="wooden_rustic"><?= /* @noEscape */ __('Rustic Wooden Table') ?></option>
+                            <option value="concrete_minimalist"><?= /* @noEscape */ __('Minimalist Concrete') ?></option>
+                            <option value="nature_botanical"><?= /* @noEscape */ __('Nature & Botanicals') ?></option>
+                            <option value="urban_street"><?= /* @noEscape */ __('Urban / Street Style') ?></option>
+                            <option value="water_ripples"><?= /* @noEscape */ __('Water Surface / Ripples') ?></option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Specific Details (Optional)') ?></label>
+                        <textarea name="prompt" rows="3" class="admin__control-textarea" placeholder="<?= /* @noEscape */ __('e.g., A red sneaker floating in the air, energetic vibe...') ?>"></textarea>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Resolution & Aspect Ratio') ?></label>
+                        <select name="resolution" class="admin__control-select" id="gen-resolution">
+                            <option value="1024x1024"><?= /* @noEscape */ __('Square (1:1) - 1024x1024') ?></option>
+                            <option value="832x1216"><?= /* @noEscape */ __('Portrait (2:3) - Social Media') ?></option>
+                            <option value="1216x832"><?= /* @noEscape */ __('Landscape (3:2) - Banners') ?></option>
+                        </select>
+                    </div>
+
+                    <div class="field-group" style="margin-top: 15px;">
+                        <details>
+                            <summary style="cursor: pointer; color: #eb5202; font-weight: 600;"><?= /* @noEscape */ __('Advanced Settings') ?></summary>
+                            <div style="margin-top: 10px;">
+                                <label style="font-size: 1.1rem; color: #666;"><?= /* @noEscape */ __('Negative Prompt (What to avoid)') ?></label>
+                                <input type="text" name="negative_prompt" class="admin__control-text" value="blurry, low quality, distorted, text, watermark, bad anatomy, deformed" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            </div>
+                        </details>
+                    </div>
+
+                    <button type="button" class="action-primary" style="margin-top: 20px;" onclick="generateImages('ai-generate-form', 'generation-results')"><?= /* @noEscape */ __('Generate Image') ?></button>
+                </form>
+            </div>
+
+            <div class="studio-preview" id="generation-results">
+                <div class="placeholder-state">
+                    <p><?= /* @noEscape */ __('Generated images will appear here.') ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="Edit" class="tab-content">
+        <div class="studio-layout">
+            <div class="studio-controls">
+                <h3><?= /* @noEscape */ __('Edit Existing') ?></h3>
+                <p class="description"><?= /* @noEscape */ __('Select an image to enhance, remove background, or modify using industry-specific tools.') ?></p>
+
+                <form id="ai-edit-form" enctype="multipart/form-data">
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Select Image') ?></label>
+                        <div class="image-grid-container">
+                            <div class="image-grid">
+                                <?php
+                                $images = $block->getProductImages();
+                                if ($images && count($images) > 0):
+                                    foreach ($images as $image): ?>
+                                        <div class="image-item" onclick="selectImage(this, '<?= /* @noEscape */ $image->getFile(); ?>')">
+                                            <img src="<?= /* @noEscape */ $image->getUrl(); ?>" alt="Product Image">
+                                        </div>
+                                    <?php endforeach;
+                                else: ?>
+                                    <p class="no-images"><?= /* @noEscape */ __('No images found for this product.') ?></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selected-image-path" name="selected_image_path">
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Or Upload') ?></label>
+                        <input type="file" id="edit-image" name="edit_image" accept="image/*" onchange="clearSelection()">
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Prompt Presets') ?></label>
+                        <select name="operation" class="admin__control-select">
+                            <option value=""><?= /* @noEscape */ __('Select an operation...') ?></option>
+                            <optgroup label="<?= /* @noEscape */ __('Universal Tools') ?>">
+                                <option value="custom"><?= /* @noEscape */ __('Custom Instructions') ?></option>
+                                <option value="remove_bg"><?= /* @noEscape */ __('Remove Background') ?></option>
+                                <option value="replace_bg"><?= /* @noEscape */ __('Replace Background') ?></option>
+                                <option value="upscale"><?= /* @noEscape */ __('Image Upscaler') ?></option>
+                                <option value="add_shadow"><?= /* @noEscape */ __('Add Shadow') ?></option>
+                            </optgroup>
+
+                            <optgroup label="<?= /* @noEscape */ __('Clothing & Apparel') ?>">
+                                <option value="ghost_mannequin"><?= /* @noEscape */ __('Ghost Mannequin') ?></option>
+                                <option value="lifestyle_model"><?= /* @noEscape */ __('Lifestyle Model Try-On') ?></option>
+                                <option value="flat_lay_model"><?= /* @noEscape */ __('Flat Lay to Model') ?></option>
+                                <option value="wrinkle_remover"><?= /* @noEscape */ __('Wrinkle Remover') ?></option>
+                                <option value="studio_hanger"><?= /* @noEscape */ __('Studio Hanger Shot') ?></option>
+                                <option value="fabric_zoom"><?= /* @noEscape */ __('Fabric Texture Zoom') ?></option>
+                            </optgroup>
+
+                            <optgroup label="<?= /* @noEscape */ __('Jewellery') ?>">
+                                <option value="ring_model"><?= /* @noEscape */ __('Ring Model') ?></option>
+                                <option value="necklace_model"><?= /* @noEscape */ __('Necklace Model') ?></option>
+                                <option value="earring_model"><?= /* @noEscape */ __('Earring Model') ?></option>
+                                <option value="wrist_model"><?= /* @noEscape */ __('Wrist Model') ?></option>
+                                <option value="diamond_sparkle"><?= /* @noEscape */ __('Diamond Sparkle Enhancer') ?></option>
+                                <option value="jewellery_studio"><?= /* @noEscape */ __('Jewellery Studio Shot') ?></option>
+                            </optgroup>
+
+                            <optgroup label="<?= /* @noEscape */ __('Skincare & Beauty') ?>">
+                                <option value="cream_texture"><?= /* @noEscape */ __('Cream Texture Smear') ?></option>
+                                <option value="water_splash"><?= /* @noEscape */ __('Water Splash Effect') ?></option>
+                                <option value="bathroom_lifestyle"><?= /* @noEscape */ __('Bathroom Shelf Lifestyle') ?></option>
+                                <option value="ingredient_bg"><?= /* @noEscape */ __('Ingredient Background') ?></option>
+                                <option value="product_podium"><?= /* @noEscape */ __('Product Podium') ?></option>
+                                <option value="bottle_reflection"><?= /* @noEscape */ __('Bottle Reflection') ?></option>
+                            </optgroup>
+
+                            <optgroup label="<?= /* @noEscape */ __('Furniture & Home') ?>">
+                                <option value="room_staging"><?= /* @noEscape */ __('Virtual Room Staging') ?></option>
+                                <option value="rug_perspective"><?= /* @noEscape */ __('Rug Floor Perspective') ?></option>
+                                <option value="wall_art"><?= /* @noEscape */ __('Wall Art Visualizer') ?></option>
+                                <option value="wood_enhancer"><?= /* @noEscape */ __('Wood Grain Enhancer') ?></option>
+                                <option value="day_night"><?= /* @noEscape */ __('Day-to-Night Lighting') ?></option>
+                                <option value="remove_furniture"><?= /* @noEscape */ __('Remove Existing Furniture') ?></option>
+                            </optgroup>
+
+                            <optgroup label="<?= /* @noEscape */ __('Electronics') ?>">
+                                <option value="screen_replace"><?= /* @noEscape */ __('Screen Content Replacer') ?></option>
+                                <option value="cable_remove"><?= /* @noEscape */ __('Cable Remover') ?></option>
+                                <option value="tech_desk"><?= /* @noEscape */ __('Tech Desk Setup') ?></option>
+                                <option value="rgb_glow"><?= /* @noEscape */ __('RGB Lighting Glow') ?></option>
+                                <option value="glossy_ref"><?= /* @noEscape */ __('Glossy Reflection') ?></option>
+                                <option value="exploded_view"><?= /* @noEscape */ __('Exploded View (Parts)') ?></option>
+                            </optgroup>
+
+                            <optgroup label="<?= /* @noEscape */ __('Food & Beverages') ?>">
+                                <option value="steam_effect"><?= /* @noEscape */ __('Add Steam Effect') ?></option>
+                                <option value="frost_effect"><?= /* @noEscape */ __('Frost & Condensation') ?></option>
+                                <option value="plating_garnish"><?= /* @noEscape */ __('Plating Garnish') ?></option>
+                                <option value="kitchen_bg"><?= /* @noEscape */ __('Kitchen Counter Background') ?></option>
+                                <option value="restaurant_table"><?= /* @noEscape */ __('Restaurant Table Setting') ?></option>
+                                <option value="liquid_splash"><?= /* @noEscape */ __('Liquid Splash') ?></option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('AI Prompt') ?></label>
+                        <textarea name="prompt" rows="4" class="admin__control-textarea" placeholder="<?= /* @noEscape */ __('Select an operation above to auto-fill instructions...') ?>"></textarea>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Output Resolution') ?></label>
+                        <select name="resolution" class="admin__control-select" id="edit-resolution">
+                            <option value="original"><?= /* @noEscape */ __('Same as Original') ?></option>
+                            <option value="1024x1024"><?= /* @noEscape */ __('Square (1024x1024)') ?></option>
+                            <option value="custom"><?= /* @noEscape */ __('Custom') ?></option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="action-primary" onclick="generateImages('ai-edit-form', 'edit-results')"><?= /* @noEscape */ __('Apply Edits') ?></button>
+                </form>
+            </div>
+
+            <div class="studio-preview" id="edit-results">
+                <div class="placeholder-state">
+                    <p><?= /* @noEscape */ __('Edited images will appear here.') ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="CropResize" class="tab-content">
+        <div class="studio-layout">
+            <div class="studio-controls">
+                <h3><?= /* @noEscape */ __('Auto Crop & Resize') ?></h3>
+                <p class="description"><?= /* @noEscape */ __('Center-crop and resize images to multiple web-ready dimensions in one click.') ?></p>
+
+                <form id="crop-resize-form">
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Select Source Image') ?></label>
+                        <div class="image-grid-container">
+                            <div class="image-grid">
+                                <?php if ($images && count($images) > 0):
+                                    foreach ($images as $image): ?>
+                                        <div class="image-item" onclick="selectCropImage(this, '<?= /* @noEscape */ $image->getFile(); ?>')">
+                                            <img src="<?= /* @noEscape */ $image->getUrl(); ?>" alt="Product Image">
+                                        </div>
+                                    <?php endforeach;
+                                else: ?>
+                                    <p class="no-images"><?= /* @noEscape */ __('No images found.') ?></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <input type="hidden" id="crop-image-path" name="image_path">
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('Output Sizes') ?></label>
+                        <div class="crop-sizes-checklist">
+                            <label class="crop-size-option"><input type="checkbox" name="sizes[]" value="2560x1440" checked> 2560 × 1440 <span class="size-tag">Banner HD</span></label>
+                            <label class="crop-size-option"><input type="checkbox" name="sizes[]" value="2560x1120" checked> 2560 × 1120 <span class="size-tag">Wide Banner</span></label>
+                            <label class="crop-size-option"><input type="checkbox" name="sizes[]" value="800x800" checked> 800 × 800 <span class="size-tag">Square</span></label>
+                            <label class="crop-size-option"><input type="checkbox" name="sizes[]" value="720x540" checked> 720 × 540 <span class="size-tag">4:3</span></label>
+                            <label class="crop-size-option"><input type="checkbox" name="sizes[]" value="500x330" checked> 500 × 330 <span class="size-tag">Card</span></label>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label><?= /* @noEscape */ __('JPEG Quality') ?></label>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <input type="range" name="quality" min="60" max="100" value="85" id="quality-slider" style="flex:1;">
+                            <span id="quality-value" style="font-weight:600;min-width:35px;">85%</span>
+                        </div>
+                        <p style="font-size:1.1rem;color:#999;margin-top:4px;">Higher = better quality, larger file size</p>
+                    </div>
+
+                    <button type="button" class="action-primary" style="margin-top:20px;width:100%;" onclick="runCropResize()">
+                        <?= /* @noEscape */ __('Generate All Sizes') ?>
+                    </button>
+                </form>
+            </div>
+
+            <div class="studio-preview" id="crop-results">
+                <div class="placeholder-state">
+                    <p><?= /* @noEscape */ __('Cropped & resized images will appear here.') ?></p>
+                    <p style="font-size:1.1rem;color:#999;margin-top:10px;">Select an image and click "Generate All Sizes"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ai-product-studio-container {
+        background: #fff;
+        border: 1px solid #d1d1d1;
+        border-radius: 3px;
+        font-family: 'Inter', sans-serif;
+    }
+    .ai-studio-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e3e3e3;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fcfcfc;
+    }
+    .ai-studio-header h2 { margin: 0; font-weight: 600; font-size: 1.6rem; color: #333; }
+    .ai-studio-tabs button {
+        background: none;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        border-bottom: 2px solid transparent;
+        color: #666;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .ai-studio-tabs button:hover { color: #333; }
+    .ai-studio-tabs button.active {
+        border-bottom-color: #eb5202;
+        color: #eb5202;
+        font-weight: 600;
+    }
+    .studio-layout {
+        display: flex;
+        min-height: 600px;
+    }
+    .studio-controls {
+        width: 320px;
+        padding: 25px;
+        background: #fff;
+        border-right: 1px solid #e3e3e3;
+        flex-shrink: 0;
+    }
+    .studio-preview {
+        flex-grow: 1;
+        padding: 30px;
+        background: #f4f5f7;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .field-group { margin-bottom: 20px; }
+    .field-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 1.2rem; }
+    .admin__control-select, .admin__control-textarea { width: 100%; border-radius: 4px; border: 1px solid #ccc; padding: 8px; font-size: 1.3rem; }
+
+    /* Optgroup Styling */
+    .admin__control-select optgroup { font-weight: 700; color: #333; font-style: normal; background: #eee; }
+    .admin__control-select option { padding: 4px; color: #444; background: #fff; }
+
+    .description { color: #777; font-size: 1.2rem; margin-bottom: 25px; line-height: 1.5; }
+
+    .image-grid-container {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        background: #fafafa;
+        padding: 8px;
+        border-radius: 4px;
+    }
+    .image-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .image-item {
+        width: 70px;
+        height: 70px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        opacity: 0.9;
+        transition: all 0.2s;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .image-item:hover { opacity: 1; transform: scale(1.05); }
+    .image-item.selected { border-color: #eb5202; opacity: 1; box-shadow: 0 0 0 2px rgba(235,82,2,0.2); }
+    .image-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Result Styling */
+    .result-container {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        text-align: center;
+        max-width: 90%;
+        width: 100%;
+    }
+    .result-image-wrapper {
+        margin-bottom: 20px;
+        max-height: 600px;
+        overflow: hidden;
+        border-radius: 4px;
+        background: #eee;
+        background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%);
+        background-size: 20px 20px;
+    }
+    .result-image-wrapper img { max-width: 100%; max-height: 600px; display: block; margin: 0 auto; }
+    .result-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .refine-section {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        text-align: left;
+    }
+    .refine-input-group { display: flex; gap: 10px; margin-top: 10px; }
+    .refine-input-group input { flex-grow: 1; }
+
+    /* Loader */
+    .loading-state { text-align: center; color: #666; }
+    .loader {
+        width: 60px;
+        aspect-ratio: 1;
+        --g: conic-gradient(from -90deg at 10px 10px,#eb5202 90deg,#0000 0);
+        background: var(--g), var(--g) 10px 10px, var(--g) 20px 20px;
+        background-size: 50% 50%;
+        animation: l15 1s infinite;
+        margin: 0 auto 20px;
+    }
+    @keyframes l15 { 90%,100% {background-position: -30px 30px,-20px 40px,-10px 50px} }
+
+    /* Buttons */
+    .action-primary {
+        background-color: #eb5202;
+        border-color: #eb5202;
+        color: #fff;
+        padding: 10px 20px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .action-primary:hover { background-color: #d44900; border-color: #d44900; }
+    .action-secondary {
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        color: #333;
+        padding: 10px 20px;
+        font-size: 1.4rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .action-secondary:hover { background-color: #e0e0e0; }
+    .action-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-confirm { background-color: #28a745; border-color: #28a745; color: white; }
+
+    /* Crop & Resize Tab */
+    .crop-sizes-checklist { display: flex; flex-direction: column; gap: 8px; }
+    .crop-size-option {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 12px; background: #f9f9f9; border: 1px solid #e0e0e0;
+        border-radius: 4px; cursor: pointer; font-size: 1.2rem; font-weight: 500;
+    }
+    .crop-size-option:hover { background: #f0f7ff; border-color: #b3d4fc; }
+    .crop-size-option input[type="checkbox"] { width: 16px; height: 16px; }
+    .size-tag {
+        margin-left: auto; font-size: 1rem; color: #999;
+        background: #eee; padding: 2px 8px; border-radius: 3px;
+    }
+    .crop-results-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px; width: 100%; max-width: 100%;
+    }
+    .crop-result-card {
+        background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+        overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .crop-result-card img {
+        width: 100%; height: 160px; object-fit: cover; display: block;
+        background: #eee;
+    }
+    .crop-result-info {
+        padding: 12px; display: flex; justify-content: space-between;
+        align-items: center; border-top: 1px solid #f0f0f0;
+    }
+    .crop-result-info .size-label { font-weight: 700; color: #333; font-size: 1.2rem; }
+    .crop-result-info .file-size { color: #999; font-size: 1.1rem; }
+    .crop-result-actions { padding: 0 12px 12px; display: flex; gap: 8px; }
+    .crop-result-actions button { font-size: 1.1rem; padding: 6px 12px; }
+
+    /* View Image Modal */
+    .crop-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 10000;
+        justify-content: center; align-items: center;
+    }
+    .crop-modal-overlay { display: none; }
+    .crop-modal-overlay[style*="block"] { display: flex !important; }
+    .crop-modal-content {
+        background: #fff; border-radius: 8px; max-width: 90vw; max-height: 90vh;
+        overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .crop-modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 20px; border-bottom: 1px solid #eee; background: #f9f9f9;
+    }
+    .crop-modal-header span { font-weight: 700; font-size: 1.4rem; color: #333; }
+    .crop-modal-close {
+        background: none; border: none; font-size: 2.4rem; cursor: pointer;
+        color: #666; line-height: 1; padding: 0 5px;
+    }
+    .crop-modal-close:hover { color: #eb5202; }
+    .crop-modal-body { padding: 20px; overflow: auto; max-height: 80vh; text-align: center; }
+    .crop-modal-body img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+</style>
+
+<script>
+    require([
+        'jquery',
+        'Magento_Ui/js/modal/alert'
+    ], function($, alert) {
+
+        // --- 0. CONFIGURATION & PHP DATA ---
+        var currentGeneratedPath = null;
+        var currentProductId = '<?= /* @noEscape */ $block->getRequest()->getParam("id"); ?>';
+
+        // Get Product Name securely from PHP
+        var currentProductName = '<?= /* @noEscape */ $escaper->escapeJs($block->getProduct() ? $block->getProduct()->getName() : "Product"); ?>';
+
+        var defaultResolution = '<?= /* @noEscape */ $block->getConfig("ai_product_studio/general/default_resolution") ?: "1024x1024"; ?>';
+        var historyStack = [];
+        var historyIndex = -1;
+
+        // --- 1. PROMPT LIBRARY (For Edit Tab) ---
+        const promptLibrary = {
+            'remove_bg': 'Remove the background completely. Keep the product isolated on a clean transparent layer. High edge precision.',
+            'replace_bg': 'Replace the background with a high-quality, neutral professional studio setting. Soft lighting, subtle shadows.',
+            'upscale': 'Upscale the image to 4K resolution. Enhance details, sharpen edges, and reduce noise while maintaining product fidelity.',
+            'add_shadow': 'Add a realistic drop shadow and contact shadow beneath the product to ground it. Directional soft lighting.',
+            // Clothing
+            'ghost_mannequin': 'Create a ghost mannequin effect. Remove the mannequin body and neck. Stitch the collar area to look 3D and hollow. Symmetrical and clean.',
+            'lifestyle_model': 'Photorealistic fashion photography. A professional model wearing this clothing item. Natural pose, realistic skin texture, blurred lifestyle background.',
+            'flat_lay_model': 'Transform this flat-lay clothing image into a realistic on-model shot. Fit the clothing naturally onto a human body.',
+            'wrinkle_remover': 'Retouch the clothing fabric. Smooth out distracting wrinkles and creases while keeping the natural fabric texture and drape.',
+            'studio_hanger': 'Display this item on a minimalist wooden hanger. Clean white wall background, soft studio lighting.',
+            'fabric_zoom': 'Generate a macro close-up of the fabric texture. High detail, showcasing the weave and material quality.',
+            // Jewellery
+            'ring_model': 'Macro photography of a hand wearing this ring. Elegant finger pose, soft skin texture, manicured nails, blurred background.',
+            'necklace_model': 'Beauty shot of a model wearing this necklace. Focus on the neck and collarbone area. Elegant lighting, soft bokeh.',
+            'earring_model': 'Close-up side profile of a model wearing this earring. Hair tucked back, soft ear texture, jewelry focus.',
+            'wrist_model': 'Wrist shot. A model wearing this bracelet/watch. Natural arm pose, rolled-up sleeve context.',
+            'diamond_sparkle': 'Enhance the jewelry brilliance. Add realistic light refraction, sparkle, and shine to the gemstones and metal.',
+            'jewellery_studio': 'High-end luxury jewelry photography. Black acrylic reflection surface, dramatic rim lighting, sharp focus.',
+            // Beauty
+            'cream_texture': 'Artistic texture smear. Show the product texture spread out next to the container. Creamy, rich detail.',
+            'water_splash': 'High-speed photography. The product is surrounded by fresh, clear water splashes and droplets. Fresh and hydrating vibe.',
+            'bathroom_lifestyle': 'Place the product on a marble bathroom counter. blurred mirror and plants in the background. Morning skincare routine vibe.',
+            'ingredient_bg': 'Surround the product with its key natural ingredients (e.g., aloe vera, flowers, fruits). Fresh, botanical composition.',
+            'product_podium': 'Place the product on a pastel-colored geometric podium. Minimalist 3D render style, soft shadows.',
+            'bottle_reflection': 'Add a sharp, glossy reflection below the bottle. enhance the glass material to look premium.',
+            // Furniture
+            'room_staging': 'Place this furniture piece in a modern, well-lit living room. Scandi-style interior, soft window light, matching decor.',
+            'rug_perspective': 'Place this rug on a hardwood floor in a cozy room. Correct the perspective to lie flat. Realistic shadows from furniture.',
+            'wall_art': 'Hang this art piece on a clean gallery wall in a modern home. Interior design photography style.',
+            'wood_enhancer': 'Enhance the wood grain details. Make the timber look rich, polished, and high-quality.',
+            'day_night': 'Change the lighting to a cozy evening scene. Warm ambient lamps, sunset glow coming through the window.',
+            'remove_furniture': 'Declutter the room. Remove the selected furniture piece and inpaint the empty space with the correct background wall/floor.',
+            // Electronics
+            'screen_replace': 'Replace the screen content with a vibrant, high-quality UI mockup. Glare-free, sharp visibility.',
+            'cable_remove': 'Remove all messy cables and wires. Clean up the desk setup to look wireless and organized.',
+            'tech_desk': 'Place this gadget on a modern workspace desk. Keyboard, mouse, and plant in the background. Tech tuber aesthetic.',
+            'rgb_glow': 'Enhance the LED lighting. Add a neon cyberpunk glow effect to the product lights.',
+            'glossy_ref': 'Place the product on a black glass surface. Sharp, cool-toned reflection. Premium tech advertising style.',
+            'exploded_view': 'Create a technical exploded view diagram of the product parts. floating components, blueprint aesthetic.',
+            // Food
+            'steam_effect': 'Add realistic hot steam rising from the food. appetizing, fresh, and hot atmosphere.',
+            'frost_effect': 'Add cold condensation droplets and frost to the glass/bottle. Ice-cold refreshing look.',
+            'plating_garnish': 'Professionally plate this dish. Fill empty space with fresh herbs, sauce drizzles, and artistic garnish.',
+            'kitchen_bg': 'Place the dish on a rustic kitchen counter. Blurred cooking ingredients in background. Home-cooked vibe.',
+            'restaurant_table': 'Set the scene in a fine-dining restaurant. White tablecloth, wine glass, candlelit blurred background.',
+            'liquid_splash': 'Dynamic liquid splash photography. The beverage is splashing out of the glass/cup. High energy.'
+        };
+
+        // --- 2. LOGIC: AUTO-FILL GENERATE TAB ---
+        function updateGeneratePrompt() {
+            // Get the selected TEXT (label) from dropdowns, not just value
+            var composition = $('select[name="composition"] option:selected').text();
+            var lighting = $('select[name="lighting"] option:selected').text();
+            var surroundings = $('select[name="surroundings"] option:selected').text();
+
+            // Construct the intelligent prompt
+            var autoPrompt = `Professional product photography of ${currentProductName}. ${composition}. ${lighting}. Placed on ${surroundings}. High resolution, 8k, photorealistic.`;
+
+            // Update the textarea
+            $('#ai-generate-form textarea[name="prompt"]').val(autoPrompt);
+        }
+
+        // Listen for changes on Generate dropdowns
+        $(document).on('change', '#ai-generate-form select', function() {
+            // Exclude resolution select from triggering prompt update
+            if($(this).attr('name') !== 'resolution') {
+                updateGeneratePrompt();
+            }
+        });
+
+        // --- 3. LOGIC: AUTO-FILL EDIT TAB ---
+        $(document).on('change', '#ai-edit-form select[name="operation"]', function() {
+            var selectedOp = $(this).val();
+            var instructionField = $('#ai-edit-form textarea[name="prompt"]');
+
+            if (promptLibrary[selectedOp]) {
+                instructionField.val(promptLibrary[selectedOp]);
+                instructionField.css('background-color', '#f0f8ff');
+                setTimeout(function(){ instructionField.css('background-color', '#fff'); }, 300);
+            } else if(selectedOp === '' || selectedOp === 'custom') {
+                instructionField.val('');
+            }
+        });
+
+        // --- 4. UI HELPER FUNCTIONS ---
+        window.openTab = function(evt, tabName) {
+            $('.tab-content').hide();
+            $('.tab-link').removeClass('active');
+            $('#' + tabName).show();
+            if (evt && evt.currentTarget) {
+                $(evt.currentTarget).addClass('active');
+            }
+        };
+
+        window.selectImage = function(element, imagePath) {
+            $('.image-item').removeClass('selected');
+            $(element).addClass('selected');
+            $('#selected-image-path').val(imagePath);
+            $('#edit-image').val('');
+        };
+
+        window.clearSelection = function() {
+            $('.image-item').removeClass('selected');
+            $('#selected-image-path').val('');
+        };
+
+        // --- 5. AJAX GENERATION LOGIC ---
+        window.generateImages = function(formId, resultDivId) {
+            var formData = new FormData(document.getElementById(formId));
+            formData.append('form_key', typeof FORM_KEY !== 'undefined' ? FORM_KEY : '');
+
+            if (formId === 'refine-form') {
+                formData.append('selected_image_path', currentGeneratedPath);
+                formData.append('operation', 'refine');
+            }
+
+            var resultDiv = $('#' + resultDivId);
+            resultDiv.html('<div class="loading-state"><div class="loader"></div><p>Generating magic... please wait.</p></div>');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/generate"); ?>',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.path) {
+                        currentGeneratedPath = response.path;
+                        addToHistory(response.path, response.url);
+                        renderResult(response, resultDivId);
+                    } else {
+                        resultDiv.html('<p style="color:red;">Error: ' + (response.error || response.message) + '</p>');
+                    }
+                },
+                error: function() {
+                    resultDiv.html('<p style="color:red;">An error occurred during generation.</p>');
+                }
+            });
+        };
+
+        window.renderResult = function(response, containerId) {
+            var html = `
+            <div class="result-container">
+                <div class="result-image-wrapper">
+                    <img src="${response.url}" alt="Generated Image">
+                </div>
+                <div class="result-actions">
+                    <button type="button" class="action-secondary" onclick="undo()" id="btn-undo" disabled>Undo</button>
+                    <button type="button" class="action-secondary" onclick="redo()" id="btn-redo" disabled>Redo</button>
+                    <button type="button" class="action-secondary" onclick="discardImage('${containerId}')">Discard</button>
+                    <button type="button" class="action-primary" id="btn-save" onclick="saveImage('${response.path}', this)">Save to Gallery</button>
+                </div>
+                <div class="refine-section">
+                    <label>Ask for changes (Refine):</label>
+                    <div class="refine-input-group">
+                        <input type="text" id="refine-prompt-${containerId}" class="admin__control-text" placeholder="e.g., Make the background darker...">
+                        <button type="button" class="action-secondary" onclick="refineImage('${containerId}')">Update</button>
+                    </div>
+                </div>
+            </div>
+        `;
+            $('#' + containerId).html(html);
+            updateHistoryButtons();
+        };
+
+        // --- 6. HISTORY & ACTIONS ---
+        window.addToHistory = function(path, url) {
+            if (historyIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, historyIndex + 1);
+            }
+            historyStack.push({path: path, url: url});
+            historyIndex++;
+            updateHistoryButtons();
+        };
+
+        window.updateHistoryButtons = function() {
+            $('#btn-undo').prop('disabled', historyIndex <= 0);
+            $('#btn-redo').prop('disabled', historyIndex >= historyStack.length - 1);
+        };
+
+        window.undo = function() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                var state = historyStack[historyIndex];
+                currentGeneratedPath = state.path;
+                $('.result-image-wrapper img').attr('src', state.url);
+                updateHistoryButtons();
+            }
+        };
+
+        window.redo = function() {
+            if (historyIndex < historyStack.length - 1) {
+                historyIndex++;
+                var state = historyStack[historyIndex];
+                currentGeneratedPath = state.path;
+                $('.result-image-wrapper img').attr('src', state.url);
+                updateHistoryButtons();
+            }
+        };
+
+        window.refineImage = function(containerId) {
+            var prompt = $('#refine-prompt-' + containerId).val();
+            if (!prompt) return;
+
+            var formData = new FormData();
+            formData.append('form_key', typeof FORM_KEY !== 'undefined' ? FORM_KEY : '');
+            formData.append('prompt', prompt);
+            formData.append('selected_image_path', currentGeneratedPath);
+            formData.append('operation', 'refine');
+
+            var wrapper = $('.result-image-wrapper');
+            wrapper.css('opacity', '0.5');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/generate"); ?>',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    wrapper.css('opacity', '1');
+                    if (response.path) {
+                        currentGeneratedPath = response.path;
+                        addToHistory(response.path, response.url);
+                        renderResult(response, containerId);
+                    } else {
+                        alert({content: 'Error: ' + (response.error || response.message)});
+                    }
+                },
+                error: function() {
+                    wrapper.css('opacity', '1');
+                    alert({content: 'An error occurred.'});
+                }
+            });
+        };
+
+        window.saveImage = function(path, btn) {
+            var $btn = $(btn);
+
+            if (!$btn.hasClass('confirm-state')) {
+                $btn.addClass('confirm-state action-confirm');
+                $btn.text('Confirm Save?');
+                setTimeout(function() {
+                    if ($btn.hasClass('confirm-state')) {
+                        $btn.removeClass('confirm-state action-confirm');
+                        $btn.text('Save to Gallery');
+                    }
+                }, 3000);
+                return;
+            }
+
+            path = currentGeneratedPath;
+            var formData = new FormData();
+            formData.append('form_key', typeof FORM_KEY !== 'undefined' ? FORM_KEY : '');
+            formData.append('image_path', path);
+            formData.append('product_id', currentProductId);
+
+            $btn.prop('disabled', true).text('Saving...');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/save"); ?>',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $btn.prop('disabled', false).removeClass('confirm-state action-confirm').text('Save to Gallery');
+                    if (response.success) {
+                        showToast('success', 'Success', 'Image saved successfully to product gallery.');
+                    } else {
+                        alert({content: 'Error: ' + response.message});
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).removeClass('confirm-state action-confirm').text('Save to Gallery');
+                    alert({content: 'Server error.'});
+                }
+            });
+        };
+
+        window.discardImage = function(containerId) {
+            alert({
+                content: 'Are you sure you want to discard this image?',
+                actions: {
+                    confirm: function() {
+                        $('#' + containerId).html('<div class="placeholder-state"><p>Image discarded.</p></div>');
+                        currentGeneratedPath = null;
+                        historyStack = [];
+                        historyIndex = -1;
+                    }
+                }
+            });
+        };
+
+        function showToast(type, title, message) {
+            var toastHtml = '<div class="custom-toast ' + type + '" style="position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; padding: 15px 25px; border-radius: 4px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none;">' +
+                '<strong style="display: block; margin-bottom: 5px;">' + title + '</strong>' + message +
+                '</div>';
+            $('.custom-toast').remove();
+            $('body').append(toastHtml);
+            var $toast = $('.custom-toast').last();
+            if (type === 'success') { $toast.css('background', '#28a745'); }
+            else if (type === 'error') { $toast.css('background', '#dc3545'); }
+            $toast.fadeIn(300);
+            setTimeout(function() { $toast.fadeOut(300, function() { $(this).remove(); }); }, 4000);
+        }
+
+        // --- 7. INITIALIZATION ---
+        $(document).ready(function(){
+            $('#gen-resolution').val(defaultResolution);
+            $('#edit-resolution').val(defaultResolution);
+
+            $('.tab-content').hide();
+            $('#Generate').show();
+            $('.tab-link').removeClass('active');
+            $('.tab-link:first').addClass('active');
+
+            // Trigger initial Auto-Fill for Generate Tab on Load
+            updateGeneratePrompt();
+
+            // Quality slider
+            $('#quality-slider').on('input', function() {
+                $('#quality-value').text($(this).val() + '%');
+            });
+        });
+
+        // --- 8. CROP & RESIZE FUNCTIONS ---
+        window.selectCropImage = function(element, imagePath) {
+            $('#CropResize .image-item').removeClass('selected');
+            $(element).addClass('selected');
+            $('#crop-image-path').val(imagePath);
+        };
+
+        window.runCropResize = function() {
+            var imagePath = $('#crop-image-path').val();
+            if (!imagePath) {
+                alert({content: 'Please select an image first.'});
+                return;
+            }
+
+            var selectedSizes = [];
+            $('#crop-resize-form input[name="sizes[]"]:checked').each(function() {
+                selectedSizes.push($(this).val());
+            });
+
+            if (selectedSizes.length === 0) {
+                alert({content: 'Please select at least one output size.'});
+                return;
+            }
+
+            var quality = $('#quality-slider').val();
+            var resultDiv = $('#crop-results');
+            resultDiv.html('<div class="loading-state"><div class="loader"></div><p>Cropping & resizing... please wait.</p></div>');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/cropResize"); ?>',
+                type: 'POST',
+                data: {
+                    form_key: typeof FORM_KEY !== 'undefined' ? FORM_KEY : '',
+                    image_path: imagePath,
+                    sizes: selectedSizes.join(','),
+                    quality: quality
+                },
+                success: function(response) {
+                    if (response.success && response.images) {
+                        renderCropResults(response);
+                    } else {
+                        resultDiv.html('<p style="color:red;">Error: ' + (response.error || 'Unknown error') + '</p>');
+                    }
+                },
+                error: function() {
+                    resultDiv.html('<p style="color:red;">Server error during crop/resize.</p>');
+                }
+            });
+        };
+
+        window.renderCropResults = function(response) {
+            var mediaUrl = '<?= /* @noEscape */ $block->getMediaUrl(); ?>';
+            var html = '<div style="width:100%;">';
+            html += '<div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">';
+            html += '<h3 style="margin:0;color:#333;">' + response.images.length + ' images generated</h3>';
+            html += '<span style="color:#666;font-size:1.2rem;">Source: ' + response.original.width + '×' + response.original.height + '</span>';
+            html += '</div>';
+            html += '<div class="crop-results-grid">';
+
+            response.images.forEach(function(img) {
+                html += '<div class="crop-result-card">';
+                html += '<img src="' + mediaUrl + img.path + '?t=' + Date.now() + '" alt="' + img.size + '">';
+                html += '<div class="crop-result-info">';
+                html += '<span class="size-label">' + img.width + ' × ' + img.height + '</span>';
+                html += '<span class="file-size">' + img.filesize + '</span>';
+                html += '</div>';
+                html += '<div class="crop-result-actions">';
+                html += '<button class="action-secondary" onclick="saveCropToGallery(\'' + img.path + '\', this)">Save to Gallery</button>';
+                html += '<a href="' + mediaUrl + img.path + '" download="' + img.filename + '" class="action-secondary" style="text-decoration:none;text-align:center;">Download</a>';
+                html += '<button class="action-secondary" onclick="viewCropImage(\'' + mediaUrl + img.path + '?t=' + Date.now() + '\', \'' + img.width + ' × ' + img.height + '\')">View</button>';
+                html += '</div>';
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+            $('#crop-results').html(html);
+        };
+
+        window.viewCropImage = function(imageUrl, sizeLabel) {
+            var overlay = document.getElementById('crop-image-modal');
+            if (!overlay) {
+                var modalHtml = '<div id="crop-image-modal" class="crop-modal-overlay" onclick="closeCropModal(event)">'
+                    + '<div class="crop-modal-content">'
+                    + '<div class="crop-modal-header">'
+                    + '<span id="crop-modal-title"></span>'
+                    + '<button class="crop-modal-close" onclick="closeCropModal()">&times;</button>'
+                    + '</div>'
+                    + '<div class="crop-modal-body">'
+                    + '<img id="crop-modal-img" src="" alt="Preview">'
+                    + '</div>'
+                    + '</div></div>';
+                $('body').append(modalHtml);
+                overlay = document.getElementById('crop-image-modal');
+            }
+            $('#crop-modal-img').attr('src', imageUrl);
+            $('#crop-modal-title').text(sizeLabel);
+            $(overlay).fadeIn(200);
+        };
+
+        window.closeCropModal = function(event) {
+            if (!event || event.target.id === 'crop-image-modal' || $(event.target).hasClass('crop-modal-close')) {
+                $('#crop-image-modal').fadeOut(200);
+            }
+        };
+
+        window.saveCropToGallery = function(path, btn) {
+            var $btn = $(btn);
+            $btn.prop('disabled', true).text('Saving...');
+
+            $.ajax({
+                url: '<?= /* @noEscape */ $block->getUrl("ai_product_studio/studio/save"); ?>',
+                type: 'POST',
+                data: {
+                    form_key: typeof FORM_KEY !== 'undefined' ? FORM_KEY : '',
+                    image_path: path,
+                    product_id: currentProductId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $btn.text('✓ Saved').css('background', '#d4edda').css('color', '#155724');
+                    } else {
+                        $btn.prop('disabled', false).text('Save to Gallery');
+                        alert({content: 'Error: ' + response.message});
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Save to Gallery');
+                }
+            });
+        };
+
+    });
+</script>

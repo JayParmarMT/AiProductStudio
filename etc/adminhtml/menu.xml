@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Meetanshi_AiProductStudio::root" title="AI Product Studio" module="Meetanshi_AiProductStudio" sortOrder="50" resource="Meetanshi_AiProductStudio::root"/>
+        <add id="Meetanshi_AiProductStudio::config" title="Configuration" module="Meetanshi_AiProductStudio" sortOrder="10" parent="Meetanshi_AiProductStudio::root" action="adminhtml/system_config/edit/section/ai_product_studio" resource="Meetanshi_AiProductStudio::config"/>
+        <add id="Meetanshi_AiProductStudio::log" title="Request Logs" module="Meetanshi_AiProductStudio" sortOrder="20" parent="Meetanshi_AiProductStudio::root" action="ai_product_studio/log/index" resource="Meetanshi_AiProductStudio::log"/>
+    </menu>
+</config>

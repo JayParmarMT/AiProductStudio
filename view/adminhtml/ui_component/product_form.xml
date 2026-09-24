@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <fieldset name="ai_product_studio" sortOrder="100">
+        <settings>
+            <collapsible>true</collapsible>
+            <label translate="true">AI Product Studio</label>
+        </settings>
+        <container name="ai_studio_container" sortOrder="10">
+            <htmlContent name="html_content">
+                <block name="ai_studio_block" class="Meetanshi\AiProductStudio\Block\Adminhtml\Studio" template="Meetanshi_AiProductStudio::studio.phtml"/>
+            </htmlContent>
+        </container>
+    </fieldset>
+</form>

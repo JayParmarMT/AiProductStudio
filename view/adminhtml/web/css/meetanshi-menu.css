@@ -1,0 +1,10 @@
+#menu-meetanshi-aiproductstudio-root>a:before {
+    content: url('../images/meetanshi.svg');
+    height: 35px;
+    margin: 0 auto;
+    width: 30px;
+}
+
+.text-center {
+    text-align: center;
+}
